@@ -1,241 +1,339 @@
-import React, { useState, useEffect } from 'react';
-import './App.css';
+.container {
+  max-width: 600px;
+  margin: 0 auto;
+  padding: 1rem;
+  min-height: 100vh;
+  background: #f9f9f7;
+}
 
-const SHEET_ID = '1tebbUu6cziXr4OYM1kpFtl2N60JHSNe3Pvt_2JaPay4';
-const SHEET_NAME = 'Sheet1';
+.container.setup-container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
 
-export default function App() {
-  const [authStep, setAuthStep] = useState('setup'); // setup, auth, dashboard
-  const [clientId, setClientId] = useState('');
-  const [entrants, setEntrants] = useState([]);
-  const [loading, setLoading] = useState(false);
-  const [newName, setNewName] = useState('');
-  const [newAmount, setNewAmount] = useState('');
-  const [error, setError] = useState('');
+.setup-card {
+  background: white;
+  border: 0.5px solid #e0dfd8;
+  border-radius: 12px;
+  padding: 2rem;
+  max-width: 450px;
+}
 
-  // Check for saved token on mount
-  useEffect(() => {
-    const saved = localStorage.getItem('googleAccessToken');
-    if (saved) {
-      setAuthStep('dashboard');
-      loadEntrants(saved);
-    } else {
-      const params = new URLSearchParams(window.location.hash.substring(1));
-      const token = params.get('access_token');
-      if (token) {
-        localStorage.setItem('googleAccessToken', token);
-        setAuthStep('dashboard');
-        loadEntrants(token);
-        window.history.replaceState({}, document.title, window.location.pathname);
-      }
-    }
-  }, []);
+.setup-card h2 {
+  font-size: 18px;
+  font-weight: 500;
+  margin-bottom: 1rem;
+}
 
-  const loadEntrants = async (accessToken) => {
-    setLoading(true);
-    try {
-      const response = await fetch(
-        `https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}/values/${SHEET_NAME}?access_token=${accessToken}`
-      );
-      const data = await response.json();
-      
-      if (data.values) {
-        const rows = data.values.slice(1);
-        const formatted = rows.map((row, idx) => ({
-          rowNum: idx + 2,
-          name: row[0] || '',
-          paid: row[1] === 'TRUE' || row[1] === true,
-          amount: row[2] || ''
-        }));
-        setEntrants(formatted);
-      }
-    } catch (err) {
-      setError('Failed to load sheet.');
-    }
-    setLoading(false);
-  };
+.setup-text {
+  font-size: 14px;
+  color: #888780;
+  margin-bottom: 1.5rem;
+  line-height: 1.6;
+}
 
-  const togglePaid = async (rowNum, currentPaid) => {
-    const accessToken = localStorage.getItem('googleAccessToken');
-    const newValue = !currentPaid;
-    
-    try {
-      await fetch(
-        `https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}/values/${SHEET_NAME}!B${rowNum}?access_token=${accessToken}`,
-        {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            values: [[newValue ? 'TRUE' : 'FALSE']]
-          })
-        }
-      );
-      
-      setEntrants(entrants.map(e => 
-        e.rowNum === rowNum ? { ...e, paid: newValue } : e
-      ));
-    } catch (err) {
-      setError('Failed to update.');
-    }
-  };
+.setup-steps {
+  font-size: 14px;
+  color: #2c2c2a;
+  margin-bottom: 1.5rem;
+  padding-left: 1.5rem;
+  line-height: 1.8;
+}
 
-  const addEntrant = async () => {
-    if (!newName.trim()) {
-      setError('Name is required.');
-      return;
-    }
+.setup-steps li {
+  margin-bottom: 0.75rem;
+}
 
-    const accessToken = localStorage.getItem('googleAccessToken');
-    const nextRow = entrants.length + 2;
+.setup-steps ul {
+  margin-top: 0.5rem;
+  margin-left: 1rem;
+  font-size: 13px;
+  color: #888780;
+}
 
-    try {
-      await fetch(
-        `https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}/values/${SHEET_NAME}!A${nextRow}:C${nextRow}?access_token=${accessToken}`,
-        {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            values: [[newName.trim(), 'FALSE', newAmount.trim() || '']]
-          })
-        }
-      );
+.setup-steps a {
+  color: #185fa5;
+  text-decoration: none;
+}
 
-      setEntrants([...entrants, {
-        rowNum: nextRow,
-        name: newName.trim(),
-        paid: false,
-        amount: newAmount.trim() || ''
-      }]);
+.setup-steps a:hover {
+  text-decoration: underline;
+}
 
-      setNewName('');
-      setNewAmount('');
-      setError('');
-    } catch (err) {
-      setError('Failed to add entrant.');
-    }
-  };
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.5rem;
+}
 
-  const handleAuth = () => {
-    if (!clientId.trim()) {
-      setError('Enter your Client ID.');
-      return;
-    }
+.header h1 {
+  font-size: 20px;
+  font-weight: 500;
+  margin: 0;
+}
 
-    const redirectUri = window.location.origin;
-    const authUrl = `https://accounts.google.com/o/oauth2/v2/auth?` +
-      `client_id=${clientId}&` +
-      `redirect_uri=${encodeURIComponent(redirectUri)}&` +
-      `response_type=token&` +
-      `scope=${encodeURIComponent('https://www.googleapis.com/auth/spreadsheets')}`;
-    
-    window.location.href = authUrl;
-  };
+.form-group {
+  margin-bottom: 1rem;
+}
 
-  const signOut = () => {
-    localStorage.removeItem('googleAccessToken');
-    setAuthStep('setup');
-    setEntrants([]);
-  };
+.form-group label {
+  display: block;
+  font-size: 14px;
+  font-weight: 500;
+  margin-bottom: 6px;
+}
 
-  if (authStep === 'setup') {
-    return (
-      <div className="container setup-container">
-        <div className="setup-card">
-          <h2>Set up your dashboard</h2>
-          <p className="setup-text">
-            You need a Google Client ID to connect. Follow these steps:
-          </p>
-          <ol className="setup-steps">
-            <li>Go to <a href="https://console.cloud.google.com" target="_blank" rel="noopener noreferrer">Google Cloud Console</a></li>
-            <li>Create a new project (or use existing)</li>
-            <li>Enable Google Sheets API</li>
-            <li>Create OAuth 2.0 credentials (Web application)</li>
-            <li>Add authorized redirect URIs:
-              <ul>
-                <li>http://localhost:3000</li>
-                <li>Your Netlify URL (after deploying)</li>
-              </ul>
-            </li>
-            <li>Copy your Client ID</li>
-          </ol>
+.form-group input,
+.form-row input {
+  width: 100%;
+  padding: 10px 12px;
+  font-size: 14px;
+  border: 0.5px solid #e0dfd8;
+  border-radius: 8px;
+  background: white;
+  color: #2c2c2a;
+  transition: border-color 0.15s, background 0.15s;
+}
 
-          <div className="form-group">
-            <label>Paste your Client ID here</label>
-            <input
-              type="text"
-              value={clientId}
-              onChange={(e) => setClientId(e.target.value)}
-              placeholder="Your Google Client ID"
-            />
-          </div>
+.form-group input:hover,
+.form-row input:hover {
+  border-color: #c5c2b5;
+  background: white;
+}
 
-          {error && <div className="error">{error}</div>}
+.form-group input:focus,
+.form-row input:focus {
+  outline: none;
+  border-color: #185fa5;
+  background: white;
+}
 
-          <button className="btn-primary" onClick={handleAuth}>
-            Connect with Google
-          </button>
-        </div>
-      </div>
-    );
+.form-row {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 1rem;
+}
+
+.form-row input:first-child {
+  flex: 1;
+}
+
+.form-row input:last-child {
+  width: 100px;
+}
+
+button {
+  padding: 10px 16px;
+  font-size: 14px;
+  border: 0.5px solid #c5c2b5;
+  border-radius: 8px;
+  background: transparent;
+  color: #2c2c2a;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+button:hover {
+  background: #f1efeb;
+  border-color: #b4b2a9;
+}
+
+button:active {
+  transform: scale(0.98);
+}
+
+button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.btn-primary {
+  width: 100%;
+  background: #2c2c2a;
+  color: white;
+  border: 0.5px solid #2c2c2a;
+  font-weight: 500;
+}
+
+.btn-primary:hover {
+  background: #444441;
+  border-color: #444441;
+}
+
+.btn-small {
+  padding: 6px 12px;
+  font-size: 13px;
+}
+
+.search-bar {
+  margin-bottom: 1rem;
+}
+
+.search-input {
+  width: 100%;
+  padding: 10px 12px;
+  font-size: 14px;
+  border: 0.5px solid #e0dfd8;
+  border-radius: 8px;
+  background: white;
+  color: #2c2c2a;
+}
+
+.search-input::placeholder {
+  color: #b4b2a9;
+}
+
+.search-input:focus {
+  outline: none;
+  border-color: #185fa5;
+}
+
+.filter-buttons {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 1rem;
+}
+
+.filter-btn {
+  flex: 1;
+  padding: 8px 12px;
+  font-size: 13px;
+  border: 0.5px solid #e0dfd8;
+  border-radius: 8px;
+  background: white;
+  color: #2c2c2a;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.filter-btn:hover {
+  border-color: #b4b2a9;
+}
+
+.filter-btn.active {
+  background: #2c2c2a;
+  color: white;
+  border-color: #2c2c2a;
+}
+
+.add-form {
+  background: white;
+  border: 0.5px solid #e0dfd8;
+  border-radius: 12px;
+  padding: 1rem 1.25rem;
+  margin-bottom: 1.5rem;
+}
+
+.add-form h3 {
+  font-size: 14px;
+  font-weight: 500;
+  margin: 0 0 12px;
+}
+
+.error {
+  background: #fcebeb;
+  color: #a32d2d;
+  padding: 10px 12px;
+  border-radius: 8px;
+  font-size: 13px;
+  margin-bottom: 1rem;
+  border: 0.5px solid #f09595;
+}
+
+.loading,
+.empty {
+  text-align: center;
+  color: #888780;
+  padding: 2rem 1rem;
+  font-size: 14px;
+}
+
+.list {
+  border: 0.5px solid #e0dfd8;
+  border-radius: 12px;
+  overflow: hidden;
+  background: white;
+}
+
+.entrant-row {
+  display: flex;
+  align-items: center;
+  padding: 12px 1rem;
+  border-bottom: 0.5px solid #e0dfd8;
+  cursor: pointer;
+  transition: background 0.1s;
+}
+
+.entrant-row:last-child {
+  border-bottom: none;
+}
+
+.entrant-row:hover {
+  background: #f9f9f7;
+}
+
+.entrant-row.paid {
+  background: #eaf3de;
+}
+
+.checkbox {
+  width: 18px;
+  height: 18px;
+  border: 2px solid #b4b2a9;
+  border-radius: 4px;
+  margin-right: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: all 0.15s;
+}
+
+.entrant-row.paid .checkbox {
+  background: #639922;
+  border-color: #639922;
+  color: white;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.entrant-info {
+  flex: 1;
+}
+
+.entrant-name {
+  font-size: 15px;
+  font-weight: 400;
+  color: #2c2c2a;
+}
+
+.entrant-row.paid .entrant-name {
+  font-weight: 500;
+  color: #3b6d11;
+}
+
+.entrant-amount {
+  font-size: 14px;
+  color: #888780;
+  margin-left: 12px;
+}
+
+@media (max-width: 480px) {
+  .container {
+    padding: 0.75rem;
   }
 
-  return (
-    <div className="container">
-      <div className="header">
-        <h1>Entrants</h1>
-        <button className="btn-small" onClick={signOut}>Sign out</button>
-      </div>
+  .setup-card {
+    padding: 1.5rem;
+  }
 
-      {error && <div className="error">{error}</div>}
+  .form-row input:last-child {
+    width: 80px;
+  }
 
-      <div className="add-form">
-        <h3>Add new entrant</h3>
-        <div className="form-row">
-          <input
-            type="text"
-            value={newName}
-            onChange={(e) => setNewName(e.target.value)}
-            placeholder="Name"
-          />
-          <input
-            type="text"
-            value={newAmount}
-            onChange={(e) => setNewAmount(e.target.value)}
-            placeholder="Amount"
-          />
-        </div>
-        <button className="btn-primary" onClick={addEntrant} disabled={loading}>
-          Add entrant
-        </button>
-      </div>
-
-      {loading && <div className="loading">Loading…</div>}
-
-      {!loading && entrants.length === 0 && (
-        <div className="empty">No entrants yet.</div>
-      )}
-
-      {!loading && entrants.length > 0 && (
-        <div className="list">
-          {entrants.map((entrant) => (
-            <div
-              key={entrant.rowNum}
-              className={`entrant-row ${entrant.paid ? 'paid' : ''}`}
-              onClick={() => togglePaid(entrant.rowNum, entrant.paid)}
-            >
-              <div className="checkbox">
-                {entrant.paid && <span>✓</span>}
-              </div>
-              <div className="entrant-info">
-                <div className="entrant-name">{entrant.name}</div>
-              </div>
-              {entrant.amount && (
-                <div className="entrant-amount">{entrant.amount}</div>
-              )}
-            </div>
-          ))}
-        </div>
-      )}
-    </div>
-  );
+  .header h1 {
+    font-size: 18px;
+  }
 }
