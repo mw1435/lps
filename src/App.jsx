@@ -65,7 +65,7 @@ export default function App() {
     
     try {
       await fetch(
-        `https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}/values/${SHEET_NAME}!B${rowNum}`,
+        `https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}/values/${SHEET_NAME}!B${rowNum}?valueInputOption=USER_ENTERED`,
         {
           method: 'PUT',
           headers: {
@@ -97,7 +97,7 @@ export default function App() {
 
     try {
       await fetch(
-        `https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}/values/${SHEET_NAME}!A${nextRow}:C${nextRow}`,
+        `https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}/values/${SHEET_NAME}!A${nextRow}:C${nextRow}?valueInputOption=USER_ENTERED`,
         {
           method: 'PUT',
           headers: {
