@@ -167,6 +167,57 @@ button:disabled {
   font-size: 13px;
 }
 
+.search-bar {
+  margin-bottom: 1rem;
+}
+
+.search-input {
+  width: 100%;
+  padding: 10px 12px;
+  font-size: 14px;
+  border: 0.5px solid #e0dfd8;
+  border-radius: 8px;
+  background: white;
+  color: #2c2c2a;
+}
+
+.search-input::placeholder {
+  color: #b4b2a9;
+}
+
+.search-input:focus {
+  outline: none;
+  border-color: #185fa5;
+}
+
+.filter-buttons {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 1rem;
+}
+
+.filter-btn {
+  flex: 1;
+  padding: 8px 12px;
+  font-size: 13px;
+  border: 0.5px solid #e0dfd8;
+  border-radius: 8px;
+  background: white;
+  color: #2c2c2a;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.filter-btn:hover {
+  border-color: #b4b2a9;
+}
+
+.filter-btn.active {
+  background: #2c2c2a;
+  color: white;
+  border-color: #2c2c2a;
+}
+
 .add-form {
   background: white;
   border: 0.5px solid #e0dfd8;
