@@ -36,7 +36,10 @@ export default function App() {
     setLoading(true);
     try {
       const response = await fetch(
-        `https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}/values/${SHEET_NAME}?access_token=${accessToken}`
+        `https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}/values/${SHEET_NAME}`,
+        {
+          headers: { 'Authorization': `Bearer ${accessToken}` }
+        }
       );
       const data = await response.json();
       
@@ -62,10 +65,13 @@ export default function App() {
     
     try {
       await fetch(
-        `https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}/values/${SHEET_NAME}!B${rowNum}?access_token=${accessToken}`,
+        `https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}/values/${SHEET_NAME}!B${rowNum}`,
         {
           method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${accessToken}`
+          },
           body: JSON.stringify({
             values: [[newValue ? 'TRUE' : 'FALSE']]
           })
@@ -91,10 +97,13 @@ export default function App() {
 
     try {
       await fetch(
-        `https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}/values/${SHEET_NAME}!A${nextRow}:C${nextRow}?access_token=${accessToken}`,
+        `https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}/values/${SHEET_NAME}!A${nextRow}:C${nextRow}`,
         {
           method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${accessToken}`
+          },
           body: JSON.stringify({
             values: [[newName.trim(), 'FALSE', newAmount.trim() || '']]
           })
