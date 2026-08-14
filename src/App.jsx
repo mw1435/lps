@@ -14,23 +14,72 @@ export default function App() {
   const [error, setError] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
   const [filterStatus, setFilterStatus] = useState('all');
+  const [tokenClient, setTokenClient] = useState(null);
 
   useEffect(() => {
     const saved = localStorage.getItem('googleAccessToken');
     if (saved) {
       setAuthStep('dashboard');
       loadEntrants(saved);
-    } else {
-      const params = new URLSearchParams(window.location.hash.substring(1));
-      const token = params.get('access_token');
-      if (token) {
-        localStorage.setItem('googleAccessToken', token);
-        setAuthStep('dashboard');
-        loadEntrants(token);
-        window.history.replaceState({}, document.title, window.location.pathname);
-      }
     }
   }, []);
+
+  const initializeGoogleAuth = (clientId) => {
+    const script = document.createElement('script');
+    script.src = 'https://accounts.google.com/gsi/client';
+    script.async = true;
+    script.defer = true;
+    script.onload = () => {
+      const client = window.google.accounts.oauth2.initCodeClient({
+        client_id: clientId,
+        scope: 'https://www.googleapis.com/auth/spreadsheets',
+        ux_mode: 'popup',
+        callback: handleAuthCode,
+        access_type: 'offline',
+        prompt: 'consent'
+      });
+      setTokenClient(client);
+      setTimeout(() => {
+        client.requestCode();
+      }, 100);
+    };
+    document.body.appendChild(script);
+  };
+
+  const handleAuthCode = (response) => {
+    if (response.code) {
+      exchangeCodeForToken(response.code);
+    }
+  };
+
+  const exchangeCodeForToken = async (code) => {
+    try {
+      const response = await fetch('https://oauth2.googleapis.com/token', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          client_id: clientId,
+          code: code,
+          grant_type: 'authorization_code',
+          redirect_uri: window.location.origin,
+        })
+      });
+      
+      const data = await response.json();
+      if (data.access_token) {
+        localStorage.setItem('googleAccessToken', data.access_token);
+        if (data.refresh_token) {
+          localStorage.setItem('googleRefreshToken', data.refresh_token);
+        }
+        setAuthStep('dashboard');
+        loadEntrants(data.access_token);
+      } else {
+        setError('Failed to get access token. Make sure your Client ID is correct.');
+      }
+    } catch (err) {
+      setError('Failed to authenticate. Check browser console for details.');
+    }
+  };
 
   const loadEntrants = async (accessToken) => {
     setLoading(true);
@@ -90,7 +139,7 @@ export default function App() {
       if (!response.ok) {
         const errorData = await response.text();
         console.error('API Error:', response.status, errorData);
-        setError('Failed to update. Check console for details.');
+        setError('Failed to update.');
         return;
       }
       
@@ -112,7 +161,7 @@ export default function App() {
     const nextRow = entrants.length + 2;
 
     try {
-      await fetch(
+      const response = await fetch(
         `https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}/values/${SHEET_NAME}!A${nextRow}:C${nextRow}?valueInputOption=USER_ENTERED`,
         {
           method: 'PUT',
@@ -125,6 +174,11 @@ export default function App() {
           })
         }
       );
+
+      if (!response.ok) {
+        setError('Failed to add entrant.');
+        return;
+      }
 
       setEntrants([...entrants, {
         rowNum: nextRow,
@@ -146,19 +200,13 @@ export default function App() {
       setError('Enter your Client ID.');
       return;
     }
-
-    const redirectUri = window.location.origin;
-    const authUrl = `https://accounts.google.com/o/oauth2/v2/auth?` +
-      `client_id=${clientId}&` +
-      `redirect_uri=${encodeURIComponent(redirectUri)}&` +
-      `response_type=token&` +
-      `scope=${encodeURIComponent('https://www.googleapis.com/auth/spreadsheets')}`;
     
-    window.location.href = authUrl;
+    initializeGoogleAuth(clientId);
   };
 
   const signOut = () => {
     localStorage.removeItem('googleAccessToken');
+    localStorage.removeItem('googleRefreshToken');
     setAuthStep('setup');
     setEntrants([]);
   };
