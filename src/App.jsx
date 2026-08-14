@@ -41,6 +41,15 @@ export default function App() {
           headers: { 'Authorization': `Bearer ${accessToken}` }
         }
       );
+      
+      if (!response.ok) {
+        const errorData = await response.text();
+        console.error('Load Error:', response.status, errorData);
+        setError('Failed to load sheet.');
+        setLoading(false);
+        return;
+      }
+      
       const data = await response.json();
       
       if (data.values) {
@@ -64,7 +73,7 @@ export default function App() {
     const newValue = !currentPaid;
     
     try {
-      await fetch(
+      const response = await fetch(
         `https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}/values/${SHEET_NAME}!B${rowNum}?valueInputOption=USER_ENTERED`,
         {
           method: 'PUT',
@@ -77,6 +86,13 @@ export default function App() {
           })
         }
       );
+      
+      if (!response.ok) {
+        const errorData = await response.text();
+        console.error('API Error:', response.status, errorData);
+        setError('Failed to update. Check console for details.');
+        return;
+      }
       
       setEntrants(entrants.map(e => 
         e.rowNum === rowNum ? { ...e, paid: newValue } : e
