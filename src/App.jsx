@@ -57,7 +57,7 @@ export default function App() {
         const formatted = rows.map((row, idx) => ({
           rowNum: idx + 2,
           name: row[0] || '',
-          paid: row[1] === 'TRUE' || row[1] === true,
+          paid: row[1] === 'PAID',
           amount: row[2] || ''
         }));
         setEntrants(formatted);
@@ -82,7 +82,7 @@ export default function App() {
             'Authorization': `Bearer ${accessToken}`
           },
           body: JSON.stringify({
-            values: [[newValue ? 'TRUE' : 'FALSE']]
+            values: [[newValue ? 'PAID' : '']]
           })
         }
       );
@@ -121,7 +121,7 @@ export default function App() {
             'Authorization': `Bearer ${accessToken}`
           },
           body: JSON.stringify({
-            values: [[newName.trim(), 'FALSE', newAmount.trim() || '']]
+            values: [[newName.trim(), '', newAmount.trim() || '']]
           })
         }
       );
