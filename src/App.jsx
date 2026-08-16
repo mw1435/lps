@@ -21,11 +21,33 @@ export default function App() {
     }
   }, []);
 
+  const jsonpRequest = (url, params) => {
+    return new Promise((resolve, reject) => {
+      const callbackName = 'jsonp_callback_' + Date.now();
+      const script = document.createElement('script');
+      
+      window[callbackName] = (data) => {
+        delete window[callbackName];
+        document.body.removeChild(script);
+        resolve(data);
+      };
+      
+      const queryParams = new URLSearchParams({ ...params, callback: callbackName });
+      script.src = `${url}?${queryParams.toString()}`;
+      script.onerror = () => {
+        delete window[callbackName];
+        document.body.removeChild(script);
+        reject(new Error('JSONP request failed'));
+      };
+      
+      document.body.appendChild(script);
+    });
+  };
+
   const loadEntrants = async (url) => {
     setLoading(true);
     try {
-      const response = await fetch(`${url}?action=getEntrants`);
-      const data = await response.json();
+      const data = await jsonpRequest(url, { action: 'getEntrants' });
       
       if (data.success) {
         setEntrants(data.data || []);
@@ -44,8 +66,11 @@ export default function App() {
     const newStatus = !currentPaid ? 'PAID' : '';
     
     try {
-      const response = await fetch(`${scriptUrl}?action=togglePaid&row=${rowNum}&status=${newStatus}`);
-      const data = await response.json();
+      const data = await jsonpRequest(scriptUrl, {
+        action: 'togglePaid',
+        row: rowNum,
+        status: newStatus
+      });
       
       if (data.success) {
         setEntrants(entrants.map(e => 
@@ -67,14 +92,12 @@ export default function App() {
       return;
     }
 
-    const params = new URLSearchParams();
-    params.append('action', 'addEntrant');
-    params.append('name', newName.trim());
-    params.append('amount', newAmount.trim() || '');
-
     try {
-      const response = await fetch(`${scriptUrl}?${params.toString()}`);
-      const data = await response.json();
+      const data = await jsonpRequest(scriptUrl, {
+        action: 'addEntrant',
+        name: newName.trim(),
+        amount: newAmount.trim() || ''
+      });
       
       if (data.success) {
         setNewName('');
@@ -124,10 +147,7 @@ export default function App() {
         <div className="setup-card">
           <h2>Connect your script</h2>
           <p className="setup-text">
-            Paste your Google Apps Script URL below. It should look like.
-          </p>
-          <p style={{ fontSize: '12px', color: '#888780', fontFamily: 'monospace' }}>
-            https://script.google.com/macros/d/SCRIPT_ID/usurp/dev
+            Paste your Google Apps Script URL below.
           </p>
 
           <div className="form-group">
