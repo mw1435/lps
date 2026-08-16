@@ -141,6 +141,9 @@ export default function App() {
     return matchesSearch && matchesStatus;
   });
 
+  const paidCount = entrants.filter(e => e.paid).length;
+  const totalCollected = paidCount * 5;
+
   if (authStep === 'setup') {
     return (
       <div className="container setup-container">
@@ -178,6 +181,17 @@ export default function App() {
       </div>
 
       {error && <div className="error">{error}</div>}
+
+      <div className="summary-bar">
+        <div className="summary-stat">
+          <span className="summary-number">{paidCount}</span>
+          <span className="summary-label">paid</span>
+        </div>
+        <div className="summary-stat">
+          <span className="summary-number">€{totalCollected}</span>
+          <span className="summary-label">collected</span>
+        </div>
+      </div>
 
       <div className="search-bar">
         <input
