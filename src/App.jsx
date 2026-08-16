@@ -19,6 +19,7 @@ export default function App() {
       setAuthStep('dashboard');
       loadEntrants(saved);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const jsonpRequest = (url, params) => {
