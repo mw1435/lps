@@ -1,12 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import './App.css';
 
-const SHEET_ID = '1tebbUu6cziXr4OYM1kpFtl2N60JHSNe3Pvt_2JaPay4';
-const SHEET_NAME = 'Sheet1';
-
 export default function App() {
   const [authStep, setAuthStep] = useState('setup');
-  const [clientId, setClientId] = useState('');
+  const [scriptUrl, setScriptUrl] = useState('');
   const [entrants, setEntrants] = useState([]);
   const [loading, setLoading] = useState(false);
   const [newName, setNewName] = useState('');
@@ -14,139 +11,52 @@ export default function App() {
   const [error, setError] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
   const [filterStatus, setFilterStatus] = useState('all');
-  const [tokenClient, setTokenClient] = useState(null);
 
   useEffect(() => {
-    const saved = localStorage.getItem('googleAccessToken');
+    const saved = localStorage.getItem('appsScriptUrl');
     if (saved) {
+      setScriptUrl(saved);
       setAuthStep('dashboard');
       loadEntrants(saved);
     }
   }, []);
 
-  const initializeGoogleAuth = (clientId) => {
-    const script = document.createElement('script');
-    script.src = 'https://accounts.google.com/gsi/client';
-    script.async = true;
-    script.defer = true;
-    script.onload = () => {
-      const client = window.google.accounts.oauth2.initCodeClient({
-        client_id: clientId,
-        scope: 'https://www.googleapis.com/auth/spreadsheets',
-        ux_mode: 'popup',
-        callback: handleAuthCode,
-        access_type: 'offline',
-        prompt: 'consent'
-      });
-      setTokenClient(client);
-      setTimeout(() => {
-        client.requestCode();
-      }, 100);
-    };
-    document.body.appendChild(script);
-  };
-
-  const handleAuthCode = (response) => {
-    if (response.code) {
-      exchangeCodeForToken(response.code);
-    }
-  };
-
-  const exchangeCodeForToken = async (code) => {
-    try {
-      const response = await fetch('https://oauth2.googleapis.com/token', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          client_id: clientId,
-          code: code,
-          grant_type: 'authorization_code',
-          redirect_uri: window.location.origin,
-        })
-      });
-      
-      const data = await response.json();
-      if (data.access_token) {
-        localStorage.setItem('googleAccessToken', data.access_token);
-        if (data.refresh_token) {
-          localStorage.setItem('googleRefreshToken', data.refresh_token);
-        }
-        setAuthStep('dashboard');
-        loadEntrants(data.access_token);
-      } else {
-        setError('Failed to get access token. Make sure your Client ID is correct.');
-      }
-    } catch (err) {
-      setError('Failed to authenticate. Check browser console for details.');
-    }
-  };
-
-  const loadEntrants = async (accessToken) => {
+  const loadEntrants = async (url) => {
     setLoading(true);
     try {
-      const response = await fetch(
-        `https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}/values/${SHEET_NAME}`,
-        {
-          headers: { 'Authorization': `Bearer ${accessToken}` }
-        }
-      );
-      
-      if (!response.ok) {
-        const errorData = await response.text();
-        console.error('Load Error:', response.status, errorData);
-        setError('Failed to load sheet.');
-        setLoading(false);
-        return;
-      }
-      
+      const response = await fetch(`${url}?action=getEntrants`);
       const data = await response.json();
       
-      if (data.values) {
-        const rows = data.values.slice(1);
-        const formatted = rows.map((row, idx) => ({
-          rowNum: idx + 2,
-          name: row[0] || '',
-          paid: row[1] === 'PAID',
-          amount: row[2] || ''
-        }));
-        setEntrants(formatted);
+      if (data.success) {
+        setEntrants(data.data || []);
+        setError('');
+      } else {
+        setError(data.message || 'Failed to load entrants.');
       }
     } catch (err) {
-      setError('Failed to load sheet.');
+      console.error('Load error:', err);
+      setError('Failed to load entrants. Check script URL.');
     }
     setLoading(false);
   };
 
   const togglePaid = async (rowNum, currentPaid) => {
-    const accessToken = localStorage.getItem('googleAccessToken');
-    const newValue = !currentPaid;
+    const newStatus = !currentPaid ? 'PAID' : '';
     
     try {
-      const response = await fetch(
-        `https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}/values/${SHEET_NAME}!B${rowNum}?valueInputOption=USER_ENTERED`,
-        {
-          method: 'PUT',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${accessToken}`
-          },
-          body: JSON.stringify({
-            values: [[newValue ? 'PAID' : '']]
-          })
-        }
-      );
+      const response = await fetch(`${scriptUrl}?action=togglePaid&row=${rowNum}&status=${newStatus}`);
+      const data = await response.json();
       
-      if (!response.ok) {
-        const errorData = await response.text();
-        console.error('API Error:', response.status, errorData);
-        setError('Failed to update.');
-        return;
+      if (data.success) {
+        setEntrants(entrants.map(e => 
+          e.rowNum === rowNum ? { ...e, paid: newStatus === 'PAID' } : e
+        ));
+        setError('');
+      } else {
+        setError(data.message || 'Failed to update.');
       }
-      
-      setEntrants(entrants.map(e => 
-        e.rowNum === rowNum ? { ...e, paid: newValue } : e
-      ));
     } catch (err) {
+      console.error('Update error:', err);
       setError('Failed to update.');
     }
   };
@@ -157,58 +67,46 @@ export default function App() {
       return;
     }
 
-    const accessToken = localStorage.getItem('googleAccessToken');
-    const nextRow = entrants.length + 2;
+    const params = new URLSearchParams();
+    params.append('action', 'addEntrant');
+    params.append('name', newName.trim());
+    params.append('amount', newAmount.trim() || '');
 
     try {
-      const response = await fetch(
-        `https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}/values/${SHEET_NAME}!A${nextRow}:C${nextRow}?valueInputOption=USER_ENTERED`,
-        {
-          method: 'PUT',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${accessToken}`
-          },
-          body: JSON.stringify({
-            values: [[newName.trim(), '', newAmount.trim() || '']]
-          })
-        }
-      );
-
-      if (!response.ok) {
-        setError('Failed to add entrant.');
-        return;
+      const response = await fetch(`${scriptUrl}?${params.toString()}`);
+      const data = await response.json();
+      
+      if (data.success) {
+        setNewName('');
+        setNewAmount('');
+        setError('');
+        loadEntrants(scriptUrl);
+      } else {
+        setError(data.message || 'Failed to add entrant.');
       }
-
-      setEntrants([...entrants, {
-        rowNum: nextRow,
-        name: newName.trim(),
-        paid: false,
-        amount: newAmount.trim() || ''
-      }]);
-
-      setNewName('');
-      setNewAmount('');
-      setError('');
     } catch (err) {
+      console.error('Add error:', err);
       setError('Failed to add entrant.');
     }
   };
 
-  const handleAuth = () => {
-    if (!clientId.trim()) {
-      setError('Enter your Client ID.');
+  const handleConnect = () => {
+    if (!scriptUrl.trim()) {
+      setError('Enter your Google Apps Script URL.');
       return;
     }
     
-    initializeGoogleAuth(clientId);
+    localStorage.setItem('appsScriptUrl', scriptUrl);
+    setAuthStep('dashboard');
+    loadEntrants(scriptUrl);
   };
 
   const signOut = () => {
-    localStorage.removeItem('googleAccessToken');
-    localStorage.removeItem('googleRefreshToken');
+    localStorage.removeItem('appsScriptUrl');
     setAuthStep('setup');
     setEntrants([]);
+    setError('');
+    setScriptUrl('');
   };
 
   const filteredEntrants = entrants.filter(e => {
@@ -224,38 +122,28 @@ export default function App() {
     return (
       <div className="container setup-container">
         <div className="setup-card">
-          <h2>Set up your dashboard</h2>
+          <h2>Connect your script</h2>
           <p className="setup-text">
-            You need a Google Client ID to connect. Follow these steps:
+            Paste your Google Apps Script URL below. It should look like.
           </p>
-          <ol className="setup-steps">
-            <li>Go to <a href="https://console.cloud.google.com" target="_blank" rel="noopener noreferrer">Google Cloud Console</a></li>
-            <li>Create a new project (or use existing)</li>
-            <li>Enable Google Sheets API</li>
-            <li>Create OAuth 2.0 credentials (Web application)</li>
-            <li>Add authorized redirect URIs:
-              <ul>
-                <li>http://localhost:3000</li>
-                <li>Your Netlify URL (after deploying)</li>
-              </ul>
-            </li>
-            <li>Copy your Client ID</li>
-          </ol>
+          <p style={{ fontSize: '12px', color: '#888780', fontFamily: 'monospace' }}>
+            https://script.google.com/macros/d/SCRIPT_ID/usurp/dev
+          </p>
 
           <div className="form-group">
-            <label>Paste your Client ID here</label>
+            <label>Google Apps Script URL</label>
             <input
               type="text"
-              value={clientId}
-              onChange={(e) => setClientId(e.target.value)}
-              placeholder="Your Google Client ID"
+              value={scriptUrl}
+              onChange={(e) => setScriptUrl(e.target.value)}
+              placeholder="Paste your Apps Script URL"
             />
           </div>
 
           {error && <div className="error">{error}</div>}
 
-          <button className="btn-primary" onClick={handleAuth}>
-            Connect with Google
+          <button className="btn-primary" onClick={handleConnect}>
+            Connect
           </button>
         </div>
       </div>
