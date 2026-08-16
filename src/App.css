@@ -289,7 +289,7 @@ button:disabled {
 .entrant-row {
   display: flex;
   align-items: center;
-  padding: 12px 1rem;
+  padding: 8px 1rem;
   border-bottom: 0.5px solid #e0dfd8;
   cursor: pointer;
   transition: background 0.1s;
@@ -308,11 +308,11 @@ button:disabled {
 }
 
 .checkbox {
-  width: 18px;
-  height: 18px;
+  width: 16px;
+  height: 16px;
   border: 2px solid #b4b2a9;
   border-radius: 4px;
-  margin-right: 12px;
+  margin-right: 10px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -333,7 +333,7 @@ button:disabled {
 }
 
 .entrant-name {
-  font-size: 15px;
+  font-size: 13px;
   font-weight: 400;
   color: #2c2c2a;
 }
