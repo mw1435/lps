@@ -69,7 +69,7 @@
 }
 
 .header h1 {
-  font-size: 20px;
+  font-size: 16px;
   font-weight: 500;
   margin: 0;
 }
@@ -88,10 +88,10 @@
 .form-group input,
 .form-row input {
   width: 100%;
-  padding: 10px 12px;
-  font-size: 14px;
+  padding: 8px 10px;
+  font-size: 13px;
   border: 0.5px solid #e0dfd8;
-  border-radius: 8px;
+  border-radius: 6px;
   background: white;
   color: #2c2c2a;
   transition: border-color 0.15s, background 0.15s;
@@ -112,8 +112,8 @@
 
 .form-row {
   display: flex;
-  gap: 8px;
-  margin-bottom: 1rem;
+  gap: 6px;
+  margin-bottom: 6px;
 }
 
 .form-row input:first-child {
@@ -121,7 +121,7 @@
 }
 
 .form-row input:last-child {
-  width: 100px;
+  width: 80px;
 }
 
 button {
@@ -167,47 +167,54 @@ button:disabled {
   font-size: 13px;
 }
 
+.add-form .btn-primary {
+  padding: 8px 12px;
+  font-size: 13px;
+}
+
 .search-bar {
   margin-bottom: 1rem;
 }
 
 .summary-bar {
   display: flex;
-  gap: 12px;
-  margin-bottom: 1rem;
+  gap: 8px;
+  margin-bottom: 0.75rem;
 }
 
 .summary-stat {
   flex: 1;
   background: white;
   border: 0.5px solid #e0dfd8;
-  border-radius: 12px;
-  padding: 12px 16px;
+  border-radius: 8px;
+  padding: 6px 10px;
   text-align: center;
 }
 
 .summary-number {
-  display: block;
-  font-size: 24px;
+  display: inline-block;
+  font-size: 15px;
   font-weight: 600;
   color: #2c2c2a;
+  margin-right: 4px;
 }
 
 .summary-label {
-  display: block;
-  font-size: 12px;
+  display: inline-block;
+  font-size: 11px;
   color: #888780;
-  margin-top: 2px;
 }
 
 .search-input {
   width: 100%;
-  padding: 10px 12px;
-  font-size: 14px;
-  border: 0.5px solid #e0dfd8;
-  border-radius: 8px;
+  padding: 12px 14px;
+  font-size: 15px;
+  font-weight: 500;
+  border: 1.5px solid #2c2c2a;
+  border-radius: 10px;
   background: white;
   color: #2c2c2a;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.08);
 }
 
 .search-input::placeholder {
@@ -250,15 +257,16 @@ button:disabled {
 .add-form {
   background: white;
   border: 0.5px solid #e0dfd8;
-  border-radius: 12px;
-  padding: 1rem 1.25rem;
-  margin-bottom: 1.5rem;
+  border-radius: 8px;
+  padding: 0.6rem 0.75rem;
+  margin-bottom: 0.75rem;
 }
 
 .add-form h3 {
-  font-size: 14px;
+  font-size: 12px;
   font-weight: 500;
-  margin: 0 0 12px;
+  margin: 0 0 6px;
+  color: #888780;
 }
 
 .error {
