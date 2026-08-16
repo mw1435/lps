@@ -177,7 +177,7 @@ export default function App() {
   return (
     <div className="container">
       <div className="header">
-        <h1>Entrants</h1>
+        <h1>Last Person Standing Payments</h1>
         <button className="btn-small" onClick={signOut}>Sign out</button>
       </div>
 
